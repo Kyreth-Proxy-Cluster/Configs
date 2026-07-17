@@ -1,0 +1,55 @@
+name: Compile Mihomo rules
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Compile rule-sets
+    runs-on: ubuntu-latest
+    env:
+      MIHOMO_VERSION: ${{ vars.MIHOMO_VERSION }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y zip wget jq
+
+          wget -O /tmp/yq \
+            https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+
+          chmod +x /tmp/yq
+          sudo mv /tmp/yq /usr/local/bin/yq
+
+      - name: Install Mihomo
+        run: |
+          if [ -z "${MIHOMO_VERSION:-}" ]; then
+            echo "MIHOMO_VERSION is not set"
+            exit 1
+          fi
+
+          wget \
+            "https://github.com/MetaCubeX/mihomo/releases/download/${MIHOMO_VERSION}/mihomo-linux-amd64-${MIHOMO_VERSION}.gz" \
+            -O mihomo.gz
+
+          gunzip mihomo.gz
+          chmod +x mihomo
+          sudo mv mihomo /usr/local/bin/mihomo
+
+      - name: Compile rule sets
+        run: |
+          chmod +x rule-sets/mihomo/compile.sh
+          CORE_NAME=mihomo ./rule-sets/mihomo/compile.sh
+
+      - name: Upload compiled archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: mihomo
+          path: rule-sets/mihomo.zip

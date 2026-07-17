@@ -5,6 +5,7 @@ set -Eeuo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT"
 
+CORE_NAME="${CORE_NAME:-mihomo}"
 MCM_BIN="${MCM_BIN:-mihomo}"
 
 BUILD_DIR="build"
@@ -29,7 +30,7 @@ find . -name meta.yaml -print0 | while IFS= read -r -d '' META; do
 
     mkdir -p "$DEST_DIR"
 
-    TMP="$(mktemp)"
+    TMP="$(mktemp --suffix=.yaml)"
 
     {
         echo "payload:"
@@ -40,6 +41,7 @@ find . -name meta.yaml -print0 | while IFS= read -r -d '' META; do
 
     "$MCM_BIN" convert-ruleset \
         "$BEHAVIOR" \
+        yaml \
         "$TMP" \
         "$DEST_FILE"
 
@@ -49,9 +51,9 @@ done
 
 (
     cd "$BUILD_DIR"
-    zip -r ../rule-sets.zip rulesets >/dev/null
+    zip -r "../${CORE_NAME}.zip" rulesets >/dev/null
 )
 
 echo
 echo "Archive created:"
-echo "rule-sets.zip"
+echo "${CORE_NAME}.zip"
