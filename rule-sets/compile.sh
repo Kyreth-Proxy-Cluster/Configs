@@ -7,49 +7,51 @@ cd "$ROOT"
 
 MCM_BIN="${MCM_BIN:-mihomo}"
 
-echo "==> Compiling rule-sets"
-echo
+BUILD_DIR="build"
+OUTPUT_DIR="${BUILD_DIR}/rule-sets"
+
+rm -rf "$BUILD_DIR"
+mkdir -p "$OUTPUT_DIR"
 
 find . -name meta.yaml -print0 | while IFS= read -r -d '' META; do
 
     RULE_DIR="$(dirname "$META")"
 
-    LIST_FILE="${RULE_DIR}/rule.list"
-    MRS_FILE="${RULE_DIR}/rule.mrs"
-
-    if [[ ! -f "$LIST_FILE" ]]; then
-        echo "ERROR: Missing ${LIST_FILE}"
-        exit 1
-    fi
+    CATEGORY="$(basename "$(dirname "$RULE_DIR")")"
+    NAME="$(basename "$RULE_DIR")"
 
     BEHAVIOR="$(yq -r '.behavior' "$META")"
 
-    case "$BEHAVIOR" in
-        domain|ipcidr|classical)
-            ;;
-        *)
-            echo "ERROR: Unknown behavior '$BEHAVIOR' in $META"
-            exit 1
-            ;;
-    esac
+    LIST="${RULE_DIR}/rule.list"
+
+    DEST_DIR="${OUTPUT_DIR}/${CATEGORY}"
+    DEST_FILE="${DEST_DIR}/${NAME}.mrs"
+
+    mkdir -p "$DEST_DIR"
 
     TMP="$(mktemp)"
 
     {
         echo "payload:"
-        sed 's/^/  - /' "$LIST_FILE"
+        sed 's/^/  - /' "$LIST"
     } > "$TMP"
 
-    echo "[${BEHAVIOR}] ${RULE_DIR}"
+    echo "[${BEHAVIOR}] ${CATEGORY}/${NAME}"
 
     "$MCM_BIN" convert-ruleset \
         "$BEHAVIOR" \
         "$TMP" \
-        "$MRS_FILE"
+        "$DEST_FILE"
 
-    rm -f "$TMP"
+    rm "$TMP"
 
 done
 
+(
+    cd "$BUILD_DIR"
+    zip -r ../rule-sets.zip rulesets >/dev/null
+)
+
 echo
-echo "✓ Done."
+echo "Archive created:"
+echo "rule-sets.zip"
