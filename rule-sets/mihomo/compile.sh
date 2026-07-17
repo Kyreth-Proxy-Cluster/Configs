@@ -5,55 +5,88 @@ set -Eeuo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT"
 
-CORE_NAME="${CORE_NAME:-mihomo}"
-MCM_BIN="${MCM_BIN:-mihomo}"
-
 BUILD_DIR="build"
 OUTPUT_DIR="${BUILD_DIR}/rule-sets"
 
-rm -rf "$BUILD_DIR"
-mkdir -p "$OUTPUT_DIR"
 
-find . -name meta.yaml -print0 | while IFS= read -r -d '' META; do
+find_targets() {
+    find . -name meta.yaml -print0
+}
 
-    RULE_DIR="$(dirname "$META")"
 
-    CATEGORY="$(basename "$(dirname "$RULE_DIR")")"
-    NAME="$(basename "$RULE_DIR")"
+parse_meta() {
+    local meta_path="$1"
+    yq -r '.behavior' "$meta_path"
+}
 
-    BEHAVIOR="$(yq -r '.behavior' "$META")"
 
-    LIST="${RULE_DIR}/rule.list"
+compile_rule() {
+    local meta_path="$1"
+    local behavior="$2"
 
-    DEST_DIR="${OUTPUT_DIR}/${CATEGORY}"
-    DEST_FILE="${DEST_DIR}/${NAME}.mrs"
+    local rule_dir
+    local behavior
+    local list
+    local category
+    local name
+    local dest_dir
+    local dest_file
+    local tmp
 
-    mkdir -p "$DEST_DIR"
 
-    TMP="$(mktemp --suffix=.yaml)"
+    rule_dir="$(dirname "$meta_path")"
+
+    category="$(basename "$(dirname "$rule_dir")")"
+    name="$(basename "$rule_dir")"
+
+    dest_dir="${OUTPUT_DIR}/${category}"
+    dest_file="${dest_dir}/${name}.mrs"
+
+    mkdir -p "$dest_dir"
+
+    echo "[${behavior}] ${category}/${name}"
+
+    tmp="$(mktemp --suffix=.yaml)"
 
     {
         echo "payload:"
-        sed 's/^/  - /' "$LIST"
-    } > "$TMP"
+        sed 's/^/  - /' "${rule_dir}/rule.list"
+    } > "$tmp"
 
-    echo "[${BEHAVIOR}] ${CATEGORY}/${NAME}"
-
-    "$MCM_BIN" convert-ruleset \
-        "$BEHAVIOR" \
+    mihomo convert-ruleset \
+        "$behavior" \
         yaml \
-        "$TMP" \
-        "$DEST_FILE"
+        "$tmp" \
+        "$dest_file"
 
-    rm "$TMP"
 
-done
+    rm -f "$tmp"
+}
 
-(
-    cd "$BUILD_DIR"
-    zip -r "../${CORE_NAME}.zip" rulesets >/dev/null
-)
 
-echo
-echo "Archive created:"
-echo "${CORE_NAME}.zip"
+archive_rules() {
+    local archive_name="mihomo.zip"
+    cd "$BUILD_DIR" && zip -qr "../${archive_name}" rule-sets
+    echo "Archive created: ${archive_name}"
+}
+
+
+main() {
+
+    rm -rf "$BUILD_DIR"
+    mkdir -p "$OUTPUT_DIR"
+
+
+    while IFS= read -r -d '' meta_path; do
+        behavior="$(parse_meta "$meta_path")"
+
+        compile_rule "$meta_path" "$behavior"
+
+    done < <(find_targets)
+
+
+    archive_rules
+}
+
+
+main "$@"
