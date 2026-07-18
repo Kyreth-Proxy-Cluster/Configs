@@ -67,6 +67,7 @@ compile_rule() {
 
     if ! mihomo convert-ruleset "$behavior" text "$rule_list_file" "$dest_mrs"; then
         log_error "Compilation failed for [${behavior}] ${category}/${rule_name} (${rule_list_file})"
+        rm -f "$dest_mrs"
         return 1
     fi
 
@@ -77,15 +78,23 @@ compile_rule() {
 # Find and process all rules
 process_all_rules() {
     local count=0
+    local failed_count=0
 
     # Search for all meta.yaml files in the source rule-sets directory
     while IFS= read -r -d '' meta_file; do
-        compile_rule "$meta_file"
-        ((count++))
+        if ! compile_rule "$meta_file"; then
+            ((failed_count += 1))
+        fi
+        ((count += 1))
     done < <(find "$RULES_SRC_DIR" -name "meta.yaml" -print0)
 
     if [[ $count -eq 0 ]]; then
         log_error "No rules found in ${RULES_SRC_DIR}!"
+        exit 1
+    fi
+
+    if (( failed_count > 0 )); then
+        log_error "${failed_count} rule compilation(s) failed."
         exit 1
     fi
 }
