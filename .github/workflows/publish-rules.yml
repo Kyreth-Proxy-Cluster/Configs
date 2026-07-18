@@ -1,0 +1,65 @@
+name: Publish Rules to Release Branch
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-and-publish:
+    name: Build and Publish Rules
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install YAML Dependencies
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.40.5/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq && yq --version
+
+      - name: Install Mihomo
+        env:
+          MIHOMO_VERSION: ${{ vars.MIHOMO_VERSION }}
+        run: |
+          wget -qO mihomo.gz "https://github.com/MetaCubeX/mihomo/releases/download/${MIHOMO_VERSION}/mihomo-linux-amd64-${MIHOMO_VERSION}.gz"
+          gunzip mihomo.gz && chmod +x mihomo
+          sudo mv mihomo /usr/local/bin/ && mihomo -v
+
+      - name: Compile Rules
+        run: ./compile-rules.sh
+
+      - name: Verify Output
+        run: echo "Listing contents of dist/:" && ls -R dist/
+
+      - name: Configure Git user
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Checkout release Branch
+        run: git fetch origin && git checkout release 2>/dev/null || git checkout --orphan release
+
+      - name: Clean release Branch
+        run: git rm -rf . 2>/dev/null || true
+
+      - name: Copy Compiled Rules 
+        run: cp -r dist/* . && find . -name "meta.yaml" -delete
+
+      - name: Commit Changes
+        id: commit_step
+        run: |
+          git add .
+          
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            git commit -m "chore: update compiled rules"
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Push Changes
+        if: steps.commit_step.outputs.has_changes == 'true'
+        run: git push origin release --force

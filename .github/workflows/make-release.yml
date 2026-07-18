@@ -1,76 +1,53 @@
-name: Make Release
+name: Create Release
 
 on:
-  workflow_dispatch:                     # Manual startup
-  workflow_call:                         # Allow to call by Parsing Workflow
-
-permissions:
-  contents: write
+  workflow_run:
+    workflows: ["Publish Rules to Release Branch"]
+    types:
+      - completed
 
 jobs:
-
-  compile-rulesets:
-    name: Compile Rulesets
-    runs-on: ubuntu-latest
-    env:
-      MIHOMO_VERSION: ${{ vars.MIHOMO_VERSION }}
-    strategy:
-      matrix:
-        core:
-          - mihomo
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Install base dependencies
-        run: sudo apt update && sudo apt install -y zip wget jq
-      
-      - name: Install yaml dependencies
-        run: |
-          wget -O /tmp/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
-          chmod +x /tmp/yq && sudo mv /tmp/yq /usr/local/bin/yq
-
-      - name: Install Mihomo
-        if: matrix.core == 'mihomo'
-        run: |
-          if [ -z "${MIHOMO_VERSION:-}" ]; then echo "MIHOMO_VERSION not set"; exit 1; fi
-          wget "https://github.com/MetaCubeX/mihomo/releases/download/${MIHOMO_VERSION}/mihomo-linux-amd64-${MIHOMO_VERSION}.gz" -O mihomo.gz
-          gunzip mihomo.gz && chmod +x mihomo
-          sudo mv mihomo /usr/local/bin/mihomo
-
-      - name: Compile Rules
-        run: |
-          chmod +x rule-sets/${{ matrix.core }}/compile.sh
-          ./rule-sets/${{ matrix.core }}/compile.sh
-
-      - name: Upload archive
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.core }}
-          path: ./rule-sets/dist/${{ matrix.core }}.zip
-
   create-release:
     name: Create Release
     runs-on: ubuntu-latest
-    needs: [compile-rulesets]
-    steps:
-      - name: Download compiled archives
-        uses: actions/download-artifact@v4
-        with:
-          path: downloads/
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    permissions:
+      contents: write
 
-      - name: List archives
-        run: find downloads -name '*.zip' | sort
+    steps:
+      - name: Checkout release Branch
+        uses: actions/checkout@v4
+        with:
+          ref: release
+
+      - name: Install ZIP
+        run: sudo apt-get update && sudo apt-get install -y zip
+
+      - name: Archive Folders
+        run: |
+          echo "Archiving core directories..."
+
+          for dir in */; do
+            core_name="${dir%/}"
+            
+            if [[ -d "$core_name" && "$core_name" != .* ]]; then
+              (cd "$core_name" && zip -qr "../${core_name}.zip" .)
+            fi
+
+          done
+          
+          echo "Archives created:" && (ls -lh *.zip || echo "No archives were created.")
 
       - name: Generate release name
-        id: release_name
+        id: release_info
         run: echo "name=$(openssl rand -hex 16)" >> $GITHUB_OUTPUT
 
-      - name: Create release
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
-          name: ${{ steps.release_name.outputs.name }}
+          name: ${{ steps.release_info.outputs.name }}
           draft: false
           prerelease: false
-          files: downloads/**/*.zip
+          files: ./*.zip
+          make_latest: true
