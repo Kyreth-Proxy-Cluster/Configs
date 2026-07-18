@@ -68,7 +68,7 @@ jobs:
         run: git rm -rf . 2>/dev/null || true
 
       - name: Copy Compiled Rules
-        run: cp -r dist/* . && find . -name "meta.yaml" -delete
+        run: cp -r dist/* . && rm -rf dist/ && find . -name "meta.yaml" -delete
 
       - name: Commit Changes
         id: commit_step
