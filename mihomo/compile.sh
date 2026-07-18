@@ -36,31 +36,6 @@ get_rule_behavior() {
     yq -r '.behavior' "$meta_file"
 }
 
-create_temp_yaml() {
-  local input_file="$1"
-  local output_file="$2"
-  
-  {
-    echo "payload:"
-    sed 's/^\(.*\)$/  - "\1"/' "$input_file"
-  } > "$output_file"
-}
-
-run_converter() {
-    local behavior="$1"
-    local input_file="$2"
-    local output_file="$3"
-    local format="$4"
-    local category="$5"
-    local rule_name="$6"
-
-    if ! mihomo convert-ruleset "$behavior" "$format" "$input_file" "$output_file"; then
-        log_error "Mihomo converter failed for [${behavior}] ${category}/${rule_name}"
-        rm -f "$output_file"
-        return 1
-    fi
-}
-
 # ------------------------------------------------------------------------------
 # 3. Compilation Logic
 # ------------------------------------------------------------------------------
@@ -91,20 +66,20 @@ compile_rule() {
     log_info "Compiling Mihomo [${behavior}] ${category}/${rule_name}..."
 
     if [[ "$behavior" == "classical" ]]; then
-        local tmp_file
-        tmp_file="$(mktemp --suffix=.yaml)"
+        local dest_yaml="${dest_dir}/${rule_name}.yaml"
         
-        create_temp_yaml "$rule_list_file" "$tmp_file"
-
-        if ! run_converter "$behavior" "$tmp_file" "$dest_mrs" "yaml" "$category" "$rule_name"; then
-            rm -f "$tmp_file"
+        {
+            echo "payload:"
+            sed -e 's/\r$//' -e 's/^\(.*\)$/  - "\1"/' "$rule_list_file"
+        } > "$dest_yaml"
+         
+    else
+        local dest_mrs="${dest_dir}/${rule_name}.mrs"
+        if ! mihomo convert-ruleset "$behavior" text "$rule_list_file" "$dest_mrs"; then
+            log_error "Mihomo converter failed for [${behavior}] ${category}/${rule_name}" && rm -f "$dest_mrs"
             return 1
         fi
         
-        rm -f "$tmp_file"
-    else
-        # For domain and ipcidr, use the native text format
-        run_converter "$behavior" "$rule_list_file" "$dest_mrs" "text" "$category" "$rule_name"
     fi
 
     # Copy the original .list file
