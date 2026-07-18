@@ -1,34 +1,34 @@
 # Kyreth-VPN Public Configs
 
-A centralized, automated repository for compiling, managing, and distributing proxy rule-sets (Rule Providers) for various proxy cores.
+Централизованный автоматизированный репозиторий для компиляции, управления и распространения наборов правил (Rule Providers) для различных proxy-движков.
 
-Currently optimized for **Mihomo**, with a modular architecture designed to easily extend support to **Sing-box**, **Stash**, and **Xray** in the future.
-
----
-
-## 🚀 Features
-
-- **Automated Compilation**: GitHub Actions automatically compile human-readable `.list` files into highly optimized `.mrs` (Mihomo Rule Set) binary formats.
-- **Clean Release Branch**: All compiled artifacts are pushed to a dedicated `release` branch, keeping the `main` branch clean for source code and configuration.
-- **Direct Raw URL Access**: Rules are instantly accessible via standard raw GitHub URLs, perfect for direct integration into your proxy client configurations.
-- **Modular Architecture**: A top-level orchestrator (`compile-rules.sh`) delegates compilation to core-specific scripts (e.g., `mihomo/compile.sh`), making it trivial to add new proxy cores.
-- **Automated Releases**: Successful compilations trigger the creation of `.zip` archives for each core, which are then published as GitHub Releases.
+В настоящее время оптимизирован для **Mihomo**, с модульной архитектурой, позволяющей в будущем легко добавлять поддержку **Sing-box**, **Stash** и **Xray**.
 
 ---
 
-## 📥 How to Use the Rules
+## 🚀 Возможности
 
-You can directly reference the compiled rule-sets in your proxy client configuration using raw GitHub URLs.
+- **Автоматическая компиляция**: GitHub Actions автоматически компилируют читаемые `.list` файлы в высоко оптимизированный бинарный формат `.mrs` (Mihomo Rule Set).
+- **Чистая ветка релизов**: Все скомпилированные артефакты публикуются в отдельную ветку `release`, что позволяет держать ветку `main` чистой и использовать её только для исходных конфигураций.
+- **Прямой доступ по raw URL**: Наборы правил доступны напрямую через стандартные raw GitHub URL, что удобно для интеграции в конфигурации прокси-клиентов.
+- **Модульная архитектура**: Внешний оркестратор (`compile-rules.sh`) делегирует компиляцию скриптам для конкретных движков (например, `mihomo/compile.sh`), что упрощает добавление новых ядер.
+- **Автоматические релизы**: После успешной компиляции создаются архивы `.zip` для каждого движка, которые затем публикуются как GitHub Releases.
 
-### URL Format
+---
+
+## 📥 Как использовать правила
+
+Вы можете напрямую ссылаться на скомпилированные наборы правил в конфигурации вашего прокси-клиента, используя raw GitHub URL.
+
+### Формат URL
 
 ```text
 https://raw.githubusercontent.com/Kyreth-VPN/public-configs/release/{core}/{category}/{rule-name}.{extension}
 ```
 
-### Example: Mihomo Rule Provider
+### Пример: Rule Provider для Mihomo
 
-To use the `category-vladlink-blocked` rule-set in your Mihomo `config.yaml`, add the following to your `rule-providers` section:
+Чтобы использовать набор правил `category-vladlink-blocked` в вашем `config.yaml` для Mihomo, добавьте следующее в секцию `rule-providers`:
 
 ```yaml
 rule-providers:
@@ -41,7 +41,7 @@ rule-providers:
     format: mrs
 ```
 
-Then, reference it in your rules section:
+Затем подключите его в секции правил:
 
 ```yaml
 rules:
@@ -49,42 +49,42 @@ rules:
 ```
 
 > [!Note]
-> Both .mrs and .list formats are available in the release branch.
+> В ветке `release` доступны оба формата: `.mrs` и `.list`.
 
-## ⚙️ How It Works (CI/CD)
+## ⚙️ Как это работает (CI/CD)
 
-The repository relies on a robust, two-stage GitHub Actions pipeline:
+Репозиторий использует надежный двухэтапный pipeline GitHub Actions:
 
   1. `publish-rules.yml`:
-    - Triggered manually (workflow_dispatch) or on pushes to main.
-    - Installs dependencies (yq, mihomo binary).
-    - Runs compile-rules.sh, which iterates through supported cores and compiles .list files into .mrs format.
-    - Checks out the release branch, cleans it, and pushes the newly compiled artifacts.
+    - Запускается вручную (`workflow_dispatch`) или при пушах в `main`.
+    - Устанавливает зависимости (`yq`, бинарник `mihomo`).
+    - Запускает `compile-rules.sh`, который перебирает поддерживаемые движки и компилирует `.list` файлы в формат `.mrs`.
+    - Чекаутит ветку `release`, очищает её и пушит новые скомпилированные артефакты.
   2. `make-release.yml`:
-    - Triggered automatically upon the successful completion of publish-rules.yml.
-    - Checks out the release branch.
-    - Dynamically archives each core's directory (e.g., mihomo.zip, sing-box.zip).
-    - Creates a new GitHub Release tagged as latest with a random hex identifier, attaching the .zip archives.
+    - Запускается автоматически после успешного выполнения `publish-rules.yml`.
+    - Чекаутит ветку `release`.
+    - Динамически архивирует директории каждого движка (например, `mihomo.zip`, `sing-box.zip`).
+    - Создаёт новый GitHub Release с тегом `latest` и случайным шестнадцатеричным идентификатором, прикрепляя `.zip` архивы.
 
-## 🛠️ Adding a New Rule
+## 🛠️ Добавление нового правила
   
-  1. Navigate to the appropriate directory (e.g., `mihomo/rule-sets/geosite/`).
-  2. Create a new folder named after your rule (e.g., `my-custom-rule`).
-  3. Add a `meta.yaml` file defining the behavior:
+  1. Перейдите в соответствующую директорию (например, `mihomo/rule-sets/geosite/`).
+  2. Создайте новую папку с именем правила (например, `my-custom-rule`).
+  3. Добавьте файл `meta.yaml`, описывающий поведение:
 
-     ``` yaml
-     behavior: domain # or 'ipcidr', or 'classical'
+     ```yaml
+     behavior: domain # или 'ipcidr', или 'classical'
      description: >
-       My first rule-set.
+       Мой первый набор правил.
      ```
 
-  4. Add a `rule.list` file containing your rules (one per line, # for comments).
-  5. Make Pull Request.
+  4. Добавьте файл `rule.list`, содержащий ваши правила (по одному на строку, комментарии обозначаются `#`).
+  5. Создайте Pull Request.
 
-## 📜 License
+## 📜 Лицензия
 
-This project is licensed under the terms specified in the [LICENSE](./LICENSE.md) file.
+Этот проект лицензирован на условиях, указанных в файле [LICENSE](./LICENSE.md).
 
 > [!TIP]
-> Always use the release branch URLs for your configurations,
-> as the main branch only contains the source .list files and not the compiled .mrs binaries.
+> Всегда используйте URL-адреса из ветки `release` для ваших конфигураций,
+> так как ветка `main` содержит только исходные `.list` файлы и не содержит скомпилированные бинарные `.mrs` файлы.
