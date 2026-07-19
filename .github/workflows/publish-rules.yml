@@ -8,6 +8,7 @@ jobs:
   compile-rulesets:
     name: Compile Rules
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -44,6 +45,7 @@ jobs:
     needs: [compile-rulesets]
     permissions:
       contents: write
+      
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
