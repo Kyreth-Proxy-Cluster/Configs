@@ -3,7 +3,6 @@
 # Mihomo Rules Compiler
 # Compiles rule-sets specifically for the Mihomo core.
 # ==============================================================================
-
 set -Eeuo pipefail
 
 # ------------------------------------------------------------------------------
@@ -30,21 +29,28 @@ log_error() {
     echo -e "\033[1;31m[ERROR]\033[0m $1" >&2
 }
 
-# Extract the 'behavior' parameter from meta.yaml
+# Determine behavior based on category folder name
 get_rule_behavior() {
-    local meta_file="$1"
-    yq -r '.behavior' "$meta_file"
+  local category="$1"
+  case "$category" in
+    geoip)
+      echo "ipcidr"
+      ;;
+    geosite)
+      echo "domain"
+      ;;
+    packages|processes|*)
+      echo "classical"
+      ;;
+  esac
 }
 
 # ------------------------------------------------------------------------------
 # 3. Compilation Logic
 # ------------------------------------------------------------------------------
-
 # Compile a single rule for Mihomo
 compile_rule() {
     local meta_file="$1"
-    local behavior
-    behavior="$(get_rule_behavior "$meta_file")"
 
     local rule_dir
     rule_dir="$(dirname "$meta_file")"
@@ -55,9 +61,11 @@ compile_rule() {
     
     local rule_name
     rule_name="$(basename "$rule_dir")"
+    
+    local behavior
+    behavior="$(get_rule_behavior "$category")"
 
     local dest_dir="${OUTPUT_DIR}/${category}"
-    local dest_mrs="${dest_dir}/${rule_name}.mrs"
     local dest_list="${dest_dir}/${rule_name}.list"
     local rule_list_file="${rule_dir}/rule.list"
 
@@ -67,19 +75,20 @@ compile_rule() {
 
     if [[ "$behavior" == "classical" ]]; then
         local dest_yaml="${dest_dir}/${rule_name}.yaml"
-        
+
         {
             echo "payload:"
-            sed -e 's/\r$//' -e 's/^\(.*\)$/  - "\1"/' "$rule_list_file"
+            sed -e 's/\r$//' -e 's/^\(.*\)$/    - "\1"/' "$rule_list_file"
         } > "$dest_yaml"
-         
+
     else
         local dest_mrs="${dest_dir}/${rule_name}.mrs"
         if ! mihomo convert-ruleset "$behavior" text "$rule_list_file" "$dest_mrs"; then
-            log_error "Mihomo converter failed for [${behavior}] ${category}/${rule_name}" && rm -f "$dest_mrs"
+            log_error "Mihomo converter failed for [${behavior}] ${category}/${rule_name}" 
+            rm -f "$dest_mrs"
             return 1
         fi
-        
+
     fi
 
     # Copy the original .list file

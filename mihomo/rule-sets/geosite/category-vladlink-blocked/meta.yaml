@@ -1,3 +1,6 @@
-behavior: domain
 description: >
-  Списко доменных имён, заблокированных провайдером Vladlink.
+  Набор доменных имен, заблокированных на уровне сетевого провайдера Vladlink. 
+  Правило предназначено для исключения данных ресурсов из маршрутизации.
+author:
+  username: Oidaho
+  github: https://github.com/Oidaho
