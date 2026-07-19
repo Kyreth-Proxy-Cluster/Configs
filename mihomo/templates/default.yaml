@@ -202,7 +202,6 @@ tun:
   # =========================================================================
   # Используем стек gVisor (google) для обработки трафика.
   stack: gvisor
-  device: "FlClashX | Geth"
   # =========================================================================
 
   # =========================================================================
@@ -347,13 +346,13 @@ rule-providers:
   geosite-category-private:
     <<: *remote-ruleset
     behavior: domain
-    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/private.mrs
+    url: https://raw.githubusercontent.com/Kyreth-VPN/public-configs/release/mihomo/geosite/private.mrs
     path: ./rule-providers/geosite/category-private.mrs
-  geoip-private:
+  geoip-category-private:
     <<: *remote-ruleset
     behavior: ipcidr
-    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/private.mrs
-    path: ./rule-providers/geoip/private.mrs
+    url: https://raw.githubusercontent.com/Kyreth-VPN/public-configs/release/mihomo/geoip/private.mrs
+    path: ./rule-providers/geoip/category-private.mrs
   # =========================================================================
 
   # =========================================================================
@@ -371,17 +370,17 @@ rule-providers:
     behavior: domain
     url: https://raw.githubusercontent.com/legiz-ru/mihomo-rule-sets/main/re-filter/domain-rule.mrs
     path: ./rule-sets/geosite/category-ru-blocked.mrs
-  geoip-ru:
-    <<: *remote-ruleset
-    behavior: ipcidr
-    url: https://raw.githubusercontent.com/Davoyan/mihomo-rule-sets/main/ip-for-ru/lists/ips-for-ru.mrs
-    path: ./rule-providers/geoip/ru.mrs
-  apps-ru:
+  packages-category-ru:
     <<: *remote-ruleset
     behavior: classical
     format: yaml
     url: https://raw.githubusercontent.com/legiz-ru/mihomo-rule-sets/main/other/ru-app-list.yaml
-    path: ./rule-sets/applications/ru.yaml
+    path: ./rule-sets/packages/category-ru.yaml
+  geoip-category-ru:
+    <<: *remote-ruleset
+    behavior: ipcidr
+    url: https://raw.githubusercontent.com/Davoyan/mihomo-rule-sets/main/ip-for-ru/lists/ips-for-ru.mrs
+    path: ./rule-providers/geoip/category-ru.mrs
   # =========================================================================
 
   # =========================================================================
@@ -392,18 +391,19 @@ rule-providers:
   geosite-category-cn:
     <<: *remote-ruleset
     behavior: domain
-    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/cn.mrs
+    url: https://raw.githubusercontent.com/Kyreth-VPN/public-configs/release/mihomo/geosite/cn.mrs
     path: ./rule-providers/geosite/category-cn.mrs
-  geoip-cn:
+  packages-category-cn:
+    <<: *remote-ruleset
+    behavior: classical
+    format: yaml
+    url: https://raw.githubusercontent.com/Kyreth-VPN/public-configs/release/mihomo/packages/category-cn.yaml
+    path: ./rule-sets/packages/category-cn.yaml
+  geoip-category-cn:
     <<: *remote-ruleset
     behavior: ipcidr
-    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/cn.mrs
-    path: ./rule-providers/geoip/cn.mrs
-  apps-cn: # TODO: Заглушка. Вынести в репозиторий.
-    type: inline
-    behavior: classical
-    payload:
-      - ""
+    url: https://raw.githubusercontent.com/Kyreth-VPN/public-configs/release/mihomo/geoip/cn.mrs
+    path: ./rule-providers/geoip/category-cn.mrs
   # =========================================================================
 
   # =========================================================================
@@ -413,7 +413,7 @@ rule-providers:
   geosite-category-ai:
     <<: *remote-ruleset
     behavior: domain
-    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/category-ai-!cn.mrs
+    url: https://raw.githubusercontent.com/Kyreth-VPN/public-configs/release/mihomo/geosite/category-ai-!cn.mrs
     path: ./rule-sets/geosite/category-ai.mrs
   # =========================================================================
   
@@ -425,7 +425,7 @@ rule-providers:
   geosite-category-porn:
     <<: *remote-ruleset
     behavior: domain
-    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/category-porn.mrs
+    url: https://raw.githubusercontent.com/Kyreth-VPN/public-configs/release/mihomo/geosite/category-porn.mrs
     path: ./rule-sets/geosite/category-porn.mrs
   # =========================================================================
 
@@ -436,7 +436,7 @@ rule-providers:
   geosite-discord:
     <<: *remote-ruleset
     behavior: domain
-    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/discord.mrs
+    url: https://raw.githubusercontent.com/Kyreth-VPN/public-configs/release/mihomo/geosite/discord.mrs
     path: ./rule-sets/geosite/discord.mrs
   geoip-discord-rtc:
     <<: *remote-ruleset
@@ -453,7 +453,7 @@ rule-providers:
   geosite-speedtest:
     <<: *remote-ruleset
     behavior: domain
-    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/speedtest.mrs
+    url: https://raw.githubusercontent.com/Kyreth-VPN/public-configs/release/mihomo/geosite/speedtest.mrs
     path: ./rule-sets/geosite/speedtest.mrs
   # =========================================================================
 
@@ -465,7 +465,7 @@ rule-providers:
   geosite-telegram:
     <<: *remote-ruleset
     behavior: domain
-    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/telegram.mrs
+    url: https://raw.githubusercontent.com/Kyreth-VPN/public-configs/release/mihomo/geosite/telegram.mrs
     path: ./rule-sets/geosite/telegram.mrs
   geosite-telegram-extended:
     <<: *remote-ruleset
@@ -476,7 +476,7 @@ rule-providers:
   geoip-telegram:
     <<: *remote-ruleset
     behavior: ipcidr
-    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/telegram.mrs
+    url: https://raw.githubusercontent.com/Kyreth-VPN/public-configs/release/mihomo/geoip/telegram.mrs
     path: ./rule-sets/geoip/telegram.mrs
   geoip-telegram-extended:
     <<: *remote-ruleset
@@ -497,12 +497,12 @@ rule-providers:
     behavior: domain
     url: https://raw.githubusercontent.com/legiz-ru/mihomo-rule-sets/main/other/torrent-trackers.mrs
     path: ./rule-sets/geosite/category-torrent.mrs
-  apps-torrent:
+  processes-category-torrent:
     <<: *remote-ruleset
     behavior: classical
     format: yaml
     url: https://raw.githubusercontent.com/legiz-ru/mihomo-rule-sets/main/other/torrent-clients.yaml
-    path: ./rule-sets/applications/torrent.yaml
+    path: ./rule-sets/processes/category-torrent.yaml
   protocol-torrent:
     type: inline
     behavior: classical
@@ -515,7 +515,7 @@ rule-providers:
   geosite-youtube:
     <<: *remote-ruleset
     behavior: domain
-    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/youtube.mrs
+    url: https://raw.githubusercontent.com/Kyreth-VPN/public-configs/release/mihomo/geosite/youtube.mrs
     path: ./rule-sets/geosite/youtube.mrs
   # =========================================================================
 
@@ -524,7 +524,7 @@ rule-providers:
   geosite-whatsapp:
     <<: *remote-ruleset
     behavior: domain
-    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/whatsapp.mrs
+    url: https://raw.githubusercontent.com/Kyreth-VPN/public-configs/release/mihomo/geosite/whatsapp.mrs
     path: ./rule-sets/geosite/whatsapp.mrs
   # =========================================================================
 
@@ -532,10 +532,10 @@ rule-providers:
   # Набор правил для Cloudflare.
   # Используется для распознавания и отдельной обработки
   # трафика, который проходит через инфраструктуру Cloudflare.
-  cloudflare-ips:
+  geoip-cloudflare:
     <<: *remote-ruleset
     behavior: ipcidr
-    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/cloudflare.mrs
+    url: https://raw.githubusercontent.com/Kyreth-VPN/public-configs/release/mihomo/geoip/cloudflare.mrs
     path: ./rule-sets/geoip/cloudflare.mrs
   # =========================================================================
 
@@ -547,7 +547,7 @@ rule-providers:
   geosite-category-remote-control:
     <<: *remote-ruleset
     behavior: domain
-    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/category-remote-control.mrs
+    url: https://raw.githubusercontent.com/Kyreth-VPN/public-configs/release/mihomo/geosite/category-remote-control.mrs
     path: ./rule-sets/geosite/category-remote-control.mrs
   protocol-rdp:
     type: inline
@@ -764,7 +764,7 @@ rules:
   # Локальные и приватные адреса направляются напрямую.
   # Это исключает лишнее проксирование внутренних и служебных сетей.
   - RULE-SET,geosite-category-private,DIRECT
-  - RULE-SET,geoip-private,DIRECT,no-resolve
+  - RULE-SET,geoip-category-private,DIRECT,no-resolve
   # ========================================================================
 
   # ========================================================================
@@ -784,7 +784,7 @@ rules:
   # Торрент-трафик и связанные приложения отправляются напрямую.
   # Исключением являются торрент-треккеры, они чаще всего заблокированны.
   - RULE-SET,protocol-torrent,DIRECT
-  - RULE-SET,apps-torrent,DIRECT
+  - RULE-SET,processes-category-torrent,DIRECT
   - PROCESS-NAME-REGEX,(?i).*torrent.*,DIRECT
   - RULE-SET,geosite-category-torrent,🌐 VPN
   # ========================================================================
@@ -801,16 +801,16 @@ rules:
   # Российские ресурсы и связанные приложения направляются напрямую.
   # Ресурсы, не доступные из РФ, маршрутизируются через VPN.
   - RULE-SET,geosite-category-ru,DIRECT
-  - RULE-SET,geoip-ru,DIRECT
-  - RULE-SET,apps-ru,DIRECT
+  - RULE-SET,geoip-category-ru,DIRECT
+  - RULE-SET,packages-category-ru,DIRECT
   - RULE-SET,geosite-category-ru-blocked,🌐 VPN
   # ========================================================================
 
   # ========================================================================
   # Китайский сегмент интернета остаётся прямым.
   - RULE-SET,geosite-category-cn,DIRECT
-  - RULE-SET,geoip-cn,DIRECT
-  - RULE-SET,apps-cn,DIRECT
+  - RULE-SET,geoip-category-cn,DIRECT
+  - RULE-SET,packages-category-cn,DIRECT
   # ========================================================================
 
   # ========================================================================
@@ -844,10 +844,10 @@ rules:
   - PROCESS-NAME-REGEX,(?i).*discord.*,🌐 VPN
   - PROCESS-NAME-REGEX,(?i).*vesktop.*,🌐 VPN
   - AND,((RULE-SET,geoip-discord-rtc),(NETWORK,udp),(DST-PORT,50000-50100)),🌐 VPN
-  - AND,((RULE-SET,cloudflare-ips),(NETWORK,udp),(DST-PORT,19200-19500)),🌐 VPN
-  - AND,((RULE-SET,cloudflare-ips),(NETWORK,udp),(DST-PORT,50000-50100)),🌐 VPN
+  - AND,((RULE-SET,geoip-cloudflare),(NETWORK,udp),(DST-PORT,19200-19500)),🌐 VPN
+  - AND,((RULE-SET,geoip-cloudflare),(NETWORK,udp),(DST-PORT,50000-50100)),🌐 VPN
   # ========================================================================
-
+  
   # ========================================================================
   # Другие ресурсы и категории.
   - RULE-SET,geosite-category-porn,🌐 VPN
