@@ -37,7 +37,7 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Merge Rules into mihomo
+      - name: Merge Mihomo Rules
         run: |
           echo "Starting merge process..."
           merged_count=0
@@ -46,20 +46,20 @@ jobs:
           mkdir -p target-repo/mihomo/geosite
           mkdir -p target-repo/mihomo/geoip
           
-          find source-repo/geo/geosite source-repo/geo/geoip -type f \( -name "*.mrs" -o -name "*.list" \) | while IFS= read -r file; do
-            rel_path="${file#source-repo/geo/}"
+          mapfile -t files < <(find source-repo/geo/geosite source-repo/geo/geoip -maxdepth 1 -type f \( -name "*.mrs" -o -name "*.list" \))
+          
+          for file in "${files[@]}"; do
+            subdir=$(basename $(dirname "$file"))
+            filename=$(basename "$file")
             
-            dest_path="target-repo/mihomo/$rel_path"
-            dest_dir=$(dirname "$dest_path")
-            
-            mkdir -p "$dest_dir"
+            dest_path="target-repo/mihomo/$subdir/$filename"
             
             if [ -f "$dest_path" ]; then
-              echo "SKIP: mihomo/$rel_path already exists"
+              echo "SKIP: mihomo/$subdir/$filename already exists"
               skipped_count=$((skipped_count + 1))
             else
               cp "$file" "$dest_path"
-              echo "ADD: mihomo/$rel_path"
+              echo "ADD: mihomo/$subdir/$filename"
               merged_count=$((merged_count + 1))
             fi
           done
@@ -68,17 +68,16 @@ jobs:
 
       - name: Commit Changes
         id: commit_step
+        working-directory: target-repo
         run: |
           git add .
-
           if git diff --staged --quiet; then
             echo "No changes to commit." && echo "has_changes=false" >> $GITHUB_OUTPUT
-
           else
-            git commit -m "chore: update compiled rules" && echo "has_changes=true" >> $GITHUB_OUTPUT
-
+            git commit -m "chore: merge MetaCubeX mihomo rules" && echo "has_changes=true" >> $GITHUB_OUTPUT
           fi
-
+      
       - name: Push Changes
         if: steps.commit_step.outputs.has_changes == 'true'
-        run: git push origin release --force
+        working-directory: target-repo
+        run: git push origin release
