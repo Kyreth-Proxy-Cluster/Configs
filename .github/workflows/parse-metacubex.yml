@@ -1,0 +1,84 @@
+name: Aggregate MetaCubeX Rules
+
+on:
+  workflow_run:
+    workflows: ["Publish Rules to Release Branch"]
+    types:
+      - completed
+      
+jobs:
+
+  aggregate-metacubex:
+    name: Aggregate MetaCubeX Rules
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    permissions:
+      contents: write
+      
+    steps:
+      - name: Checkout release Branch
+        uses: actions/checkout@v4
+        with:
+          ref: release
+          fetch-depth: 0
+          path: target-repo
+      
+      - name: Checkout MetaCubeX/meta-rules-dat
+        uses: actions/checkout@v4
+        with:
+          repository: MetaCubeX/meta-rules-dat
+          ref: meta
+          fetch-depth: 1
+          path: source-repo
+
+      - name: Configure Git User
+        run: |
+          cd target-repo
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Merge Rules into mihomo
+        run: |
+          echo "Starting merge process..."
+          merged_count=0
+          skipped_count=0
+          
+          mkdir -p target-repo/mihomo/geosite
+          mkdir -p target-repo/mihomo/geoip
+          
+          find source-repo/geo/geosite source-repo/geo/geoip -type f \( -name "*.mrs" -o -name "*.list" \) | while IFS= read -r file; do
+            rel_path="${file#source-repo/geo/}"
+            
+            dest_path="target-repo/mihomo/$rel_path"
+            dest_dir=$(dirname "$dest_path")
+            
+            mkdir -p "$dest_dir"
+            
+            if [ -f "$dest_path" ]; then
+              echo "SKIP: mihomo/$rel_path already exists"
+              skipped_count=$((skipped_count + 1))
+            else
+              cp "$file" "$dest_path"
+              echo "ADD: mihomo/$rel_path"
+              merged_count=$((merged_count + 1))
+            fi
+          done
+          
+          echo "Merge complete. Added: $merged_count, Skipped: $skipped_count"
+
+      - name: Commit Changes
+        id: commit_step
+        run: |
+          git add .
+
+          if git diff --staged --quiet; then
+            echo "No changes to commit." && echo "has_changes=false" >> $GITHUB_OUTPUT
+
+          else
+            git commit -m "chore: update compiled rules" && echo "has_changes=true" >> $GITHUB_OUTPUT
+
+          fi
+
+      - name: Push Changes
+        if: steps.commit_step.outputs.has_changes == 'true'
+        run: git push origin release --force
