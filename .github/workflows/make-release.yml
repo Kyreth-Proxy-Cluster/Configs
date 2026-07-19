@@ -31,8 +31,9 @@ jobs:
             core_name="${dir%/}"
 
             if [[ -d "$core_name" && "$core_name" != .* ]]; then
-              if find "$core_name" -type f -name '*.mrs' | grep -q .; then
-                (cd "$core_name" && zip -qr "../${core_name}.zip" $(find . -type f -name '*.mrs' | sed 's#^./##'))
+              if find "$core_name" -type f \( -name '*.mrs' -o -name '*.srs' \) | grep -q .; then
+                echo "Creating archive for ${core_name}..."
+                (cd "$core_name" && zip -qr "../${core_name}.zip" $(find . -type f \( -name '*.mrs' -o -name '*.srs' \) | sed 's#^./##'))
               fi
             fi
 

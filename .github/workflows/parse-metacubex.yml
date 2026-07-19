@@ -23,13 +23,21 @@ jobs:
           fetch-depth: 0
           path: target-repo
       
-      - name: Checkout MetaCubeX/meta-rules-dat
+      - name: Checkout MetaCubeX/meta-rules-dat 
         uses: actions/checkout@v4
         with:
           repository: MetaCubeX/meta-rules-dat
           ref: meta
           fetch-depth: 1
-          path: source-repo
+          path: source-meta
+
+      - name: Checkout MetaCubeX/meta-rules-dat
+        uses: actions/checkout@v4
+        with:
+          repository: MetaCubeX/meta-rules-dat
+          ref: sing
+          fetch-depth: 1
+          path: source-sing
 
       - name: Configure Git User
         run: |
@@ -39,19 +47,18 @@ jobs:
 
       - name: Merge Mihomo Rules
         run: |
-          echo "Starting merge process..."
+          echo "Starting Mihomo rules merge..."
           merged_count=0
           skipped_count=0
           
           mkdir -p target-repo/mihomo/geosite
           mkdir -p target-repo/mihomo/geoip
           
-          mapfile -t files < <(find source-repo/geo/geosite source-repo/geo/geoip -maxdepth 1 -type f \( -name "*.mrs" -o -name "*.list" \))
+          mapfile -t files < <(find source-meta/geo/geosite source-meta/geo/geoip -maxdepth 1 -type f \( -name "*.mrs" -o -name "*.list" \))
           
           for file in "${files[@]}"; do
             subdir=$(basename $(dirname "$file"))
             filename=$(basename "$file")
-            
             dest_path="target-repo/mihomo/$subdir/$filename"
             
             if [ -f "$dest_path" ]; then
@@ -63,21 +70,60 @@ jobs:
               merged_count=$((merged_count + 1))
             fi
           done
-          
-          echo "Merge complete. Added: $merged_count, Skipped: $skipped_count"
+          echo "Mihomo merge complete. Added: $merged_count, Skipped: $skipped_count"
 
-      - name: Commit Changes
-        id: commit_step
+      - name: Commit Mihomo Changes
+        id: commit_mihomo
         working-directory: target-repo
         run: |
-          git add .
+          git add mihomo/
           if git diff --staged --quiet; then
-            echo "No changes to commit." && echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "No Mihomo changes to commit." && echo "has_changes=false" >> $GITHUB_OUTPUT
           else
             git commit -m "chore: merge MetaCubeX mihomo rules" && echo "has_changes=true" >> $GITHUB_OUTPUT
           fi
+
+      - name: Merge Sing-Box Rules
+        run: |
+          echo "Starting Sing-Box rules merge..."
+          merged_count=0
+          skipped_count=0
+          
+          mkdir -p target-repo/singbox/geosite
+          mkdir -p target-repo/singbox/geoip
+          
+          mapfile -t files < <(find source-sing/geo/geosite source-sing/geo/geoip -maxdepth 1 -type f \( -name "*.srs" -o -name "*.json" \))
+          
+          for file in "${files[@]}"; do
+            subdir=$(basename $(dirname "$file"))
+            filename=$(basename "$file")
+            dest_path="target-repo/singbox/$subdir/$filename"
+            
+            if [ -f "$dest_path" ]; then
+              echo "SKIP: singbox/$subdir/$filename already exists"
+              skipped_count=$((skipped_count + 1))
+            else
+              cp "$file" "$dest_path"
+              echo "ADD: singbox/$subdir/$filename"
+              merged_count=$((merged_count + 1))
+            fi
+          done
+          echo "Sing-Box merge complete. Added: $merged_count, Skipped: $skipped_count"
+
+      - name: Commit Sing-Box Changes
+        id: commit_singbox
+        working-directory: target-repo
+        run: |
+          git add singbox/
+          if git diff --staged --quiet; then
+            echo "No Sing-Box changes to commit." && echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            git commit -m "chore: merge MetaCubeX singbox rules" && echo "has_changes=true" >> $GITHUB_OUTPUT
+          fi
       
       - name: Push Changes
-        if: steps.commit_step.outputs.has_changes == 'true'
+        if: |
+          steps.commit_mihomo.outputs.has_changes == 'true' ||
+          steps.commit_singbox.outputs.has_changes == 'true'
         working-directory: target-repo
         run: git push origin release
