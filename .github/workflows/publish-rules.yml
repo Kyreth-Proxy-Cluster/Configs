@@ -2,6 +2,8 @@ name: Publish Rules to Release Branch
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: "0 23 * * *"
 
 jobs:
 
@@ -45,7 +47,7 @@ jobs:
     needs: [compile-rulesets]
     permissions:
       contents: write
-      
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
